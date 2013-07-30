@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title></title>
+  <script type='text/javascript' src="../lib/d3.js"></script>
+  <script type='text/javascript' src="bar_chart.js"></script>
+  <script type='text/javascript' src="container.js"></script>
+  <style>
+    body {
+      font: 14px sans-serif;
+    }
+    .axis path, .axis line {
+      fill: none;
+      stroke: black;
+      shape-rendering: crispEdges;
+    }
+    .axis path{
+      fill: none;
+      stroke: black;
+    }
+    .bar {
+      fill: steelblue;
+    }
+    svg{
+      border: 1px solid silver;
+    }
+    svg rect{
+      stroke-width: 5px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="container"></div>
+
+<script type="text/javascript">
+
+  function shuffle(d){for(var c=d.length-1;c>0;c--){var b=Math.floor(Math.random()*(c+1));var a=d[c];d[c]=d[b];d[b]=a}return d};
+  function pickRandom(arr){ return Math.floor(arr[~~(Math.random()*arr.length)]*100)/100; }
+  function range(lower, upper){ return d3.range(upper-lower).map(function(d, i){ return d+lower; }); }
+  function randomColor(){ return 'rgb('+~~(Math.random()*100+155)+','+~~(Math.random()*100+155)+','+~~(Math.random()*100+155)+')'; }
+  var letters = d3.range(26).map(function(d, i){ return String.fromCharCode(d + 65); });
+  var shuffleLetters = shuffle(letters);
+
+  function generateDataset(){
+    return d3.range(8).map(function(d, i){
+      var rndLetter = shuffleLetters.pop(~~(Math.random()*(letters.length)));
+      return {
+        car: rndLetter,
+        mpg: ~~(Math.random()*30 + 1),
+        gear: ~~(Math.random()*3) + 1,
+        wt: 1,
+        cyl: pickRandom([4, 6, 8]),
+        qsec: pickRandom(range(15, 25)),
+        hp: pickRandom(range(90, 500)),
+        am: pickRandom([0, 1]),
+        vs: pickRandom([0, 1])
+      };
+    });
+  }
+
+
+  function generateChart(){
+    var carsDataset1 = generateDataset();
+    var carsDataset2 = generateDataset();
+
+    var data1 = carsDataset1.map(function(d, i){ return {name: d.car, value: d.mpg}; });
+    var data2 = carsDataset2.map(function(d, i){ return {name: d.car, value: d.mpg}; });
+
+    var containers = d3.select('#container')
+        .selectAll('div.chart')
+        .data([randomColor(), randomColor()]);
+    containers.enter().append('div')
+        .attr({'class': function(d, i){ return 'chart'+i; }})
+        .classed('chart', true);
+    containers.datum(function(d, i){ return d; })
+        .call(d3.custom.Container());
+  }
+
+  generateChart();
+
+  d3.select('body').on('click', generateChart);
+
+</script>
+
+</body>
+</html>
