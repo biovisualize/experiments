@@ -26,13 +26,15 @@
       border: 1px solid silver;
     }
     svg rect{
-      stroke-width: 5px;
+      fill: aliceblue;
+      stroke: black;
     }
   </style>
 </head>
 <body>
 
-<div id="container"></div>
+<!--<div id="container"></div>-->
+<div id="container2"></div>
 
 <script type="text/javascript">
 
@@ -68,19 +70,116 @@
     var data1 = carsDataset1.map(function(d, i){ return {name: d.car, value: d.mpg}; });
     var data2 = carsDataset2.map(function(d, i){ return {name: d.car, value: d.mpg}; });
 
-    var containers = d3.select('#container')
-        .selectAll('div.chart')
-        .data([randomColor(), randomColor()]);
-    containers.enter().append('div')
+    var svg = d3.select('#container')
+        .selectAll('svg')
+        .data([0]);
+    svg.enter().append('svg')
+
+    var containers = svg.selectAll('g.chart')
+        .data([randomColor(), randomColor(), randomColor(), randomColor(), randomColor(), randomColor()]);
+    containers.enter().append('g')
         .attr({'class': function(d, i){ return 'chart'+i; }})
         .classed('chart', true);
+
     containers.datum(function(d, i){ return d; })
-        .call(d3.custom.Container());
+        .call(d3.custom.Grid().columnNumber(2));
   }
 
-  generateChart();
+//  generateChart();
 
-  d3.select('body').on('click', generateChart);
+//  d3.select('body').on('click', generateChart);
+
+
+    var data = [[0, 1, 2, 3], [4, 5, 6, 7], [4, 5, 6, 7]];
+//  var data = [[0, 1, 2, 3], [4, 5, 6, 7]];
+  var svg = d3.select('#container2').append('svg');
+
+  // chart space
+  var w = 800, h = 500,
+      titleSize = 50,
+      chartSpaceX = titleSize,
+      chartSpaceY = titleSize,
+      chartSpaceW = w - titleSize * 2,
+      chartSpaceH = h - titleSize * 2;
+//  svg.append('rect').attr({x: chartSpaceX, y: chartSpaceY, width: chartSpaceW, height: chartSpaceH});
+
+  // facets
+  var axisSize = 30,
+      gridRowNum = data[0].length,
+      gridColNum = data.length,
+      facetW = (chartSpaceW - axisSize * 2)/gridRowNum,
+      facetH = (chartSpaceH - axisSize * 2)/gridColNum;
+  var chartW = facetW,
+      chartH = facetH;
+
+
+  var facetRow = svg.selectAll('g.facet-row')
+      .data(data)
+      .enter().append('g')
+      .classed('facet-row', true);
+
+  // y axis label
+  svg.append('rect').attr({x: 0, y: titleSize, width: titleSize, height: h - titleSize * 2});
+  // chart title
+  svg.append('rect').attr({x: titleSize, y: 0, width: w - titleSize * 2, height: titleSize});
+  // legend
+  svg.append('rect').attr({x: w - titleSize, y: titleSize, width: titleSize, height: h - titleSize * 2});
+  // x axis label
+  svg.append('rect').attr({x: titleSize, y: h - titleSize, width: w - titleSize * 2, height: titleSize});
+
+  var facetGroup = facetRow.selectAll('g.facet-group')
+      .data(function(d, i){ return d; })
+      .enter().append('g')
+      .classed('facet-group', true);
+  facetGroup.filter(function(d, i){ return i == 0; }).append('rect').classed('axis-y', true)
+      .attr({
+        x: chartSpaceX,
+        y: function(d, i, pI){ return chartSpaceY + axisSize + chartH * pI; },
+        width: axisSize,
+        height: facetH
+      });
+  facetGroup.filter(function(d, i){ return i == data[0].length - 1; }).append('rect').classed('tab-y', true)
+      .attr({
+        x: function(d, i, pI){ return chartSpaceX + axisSize + chartW * data[pI].length - 1; },
+        y: function(d, i, pI){ return chartSpaceY + axisSize + chartH * pI; },
+        width: axisSize,
+        height: facetH
+      });
+  facetGroup.append('rect')
+      .attr({
+        'class': function(d, i, pI){ return 'chart_' + [i, pI].join('-'); },
+        x: function(d, i){ return chartSpaceX + axisSize + chartW * i; },
+        y:function(d, i, pI){ return chartSpaceY + axisSize + chartH * pI; },
+        width: chartW,
+        height: chartH
+      })
+      .classed('chart', true);
+
+  var facetTabs = facetRow.filter(function(d, i){ return i == 0; }).selectAll('g.row-tab-x')
+      .data(function(d, i){ return d; })
+      .enter().append('g')
+      .classed('row-tab-x', true);
+  facetTabs.append('rect').classed('tab-x', true)
+      .attr({
+        x: function(d, i, pI){ return chartSpaceX + axisSize + chartW * i; },
+        y: function(d, i, pI){ return chartSpaceY + chartH * pI; },
+        width: chartW,
+        height: axisSize
+      });
+
+  var facetTabs = facetRow.filter(function(d, i){ return i == data.length - 1; }).selectAll('g.row-axis-x')
+      .data(function(d, i){ return d; })
+      .enter().append('g')
+      .classed('row-axis-x', true);
+  facetTabs.append('rect').classed('axis-x', true)
+      .attr({
+        x: function(d, i){ return chartSpaceX + axisSize + chartW * i; },
+        y: function(d, i){ return chartSpaceY + axisSize + chartH * data.length; },
+        width: chartW,
+        height: axisSize
+      });
+
+
 
 </script>
 
