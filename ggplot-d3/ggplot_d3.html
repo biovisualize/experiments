@@ -4,7 +4,7 @@
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <title></title>
   <script type='text/javascript' src="../lib/d3.js"></script>
-  <script type='text/javascript' src="bar_chart.js"></script>
+  <script type='text/javascript' src="plain_bar_chart.js"></script>
   <script type='text/javascript' src="container.js"></script>
   <style>
     body {
@@ -27,7 +27,7 @@
     }
     svg rect{
       fill: aliceblue;
-      stroke: black;
+      stroke: grey;
     }
   </style>
 </head>
@@ -37,6 +37,20 @@
 <div id="container2"></div>
 
 <script type="text/javascript">
+  /*
+    advantage of rewriting it from scratch:
+    -generic faceting container
+    -reusable charts
+    -json spec decoupled from chart assembly
+    -composition instead of hierarchy
+    -decoupled from data format
+    -testable (not just testing any output)
+    -update/enter/exit
+   */
+
+
+  // data
+  //////////////////////////////////////////////////////
 
   function shuffle(d){for(var c=d.length-1;c>0;c--){var b=Math.floor(Math.random()*(c+1));var a=d[c];d[c]=d[b];d[b]=a}return d};
   function pickRandom(arr){ return Math.floor(arr[~~(Math.random()*arr.length)]*100)/100; }
@@ -62,37 +76,13 @@
     });
   }
 
-
-  function generateChart(){
-    var carsDataset1 = generateDataset();
-    var carsDataset2 = generateDataset();
-
-    var data1 = carsDataset1.map(function(d, i){ return {name: d.car, value: d.mpg}; });
-    var data2 = carsDataset2.map(function(d, i){ return {name: d.car, value: d.mpg}; });
-
-    var svg = d3.select('#container')
-        .selectAll('svg')
-        .data([0]);
-    svg.enter().append('svg')
-
-    var containers = svg.selectAll('g.chart')
-        .data([randomColor(), randomColor(), randomColor(), randomColor(), randomColor(), randomColor()]);
-    containers.enter().append('g')
-        .attr({'class': function(d, i){ return 'chart'+i; }})
-        .classed('chart', true);
-
-    containers.datum(function(d, i){ return d; })
-        .call(d3.custom.Grid().columnNumber(2));
-  }
-
-//  generateChart();
-
-//  d3.select('body').on('click', generateChart);
-
-
-    var data = [[0, 1, 2, 3], [4, 5, 6, 7], [4, 5, 6, 7]];
+  var data = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]];
 //  var data = [[0, 1, 2, 3], [4, 5, 6, 7]];
   var svg = d3.select('#container2').append('svg');
+
+
+  // facets
+  //////////////////////////////////////////////////////
 
   // chart space
   var w = 800, h = 500,
@@ -109,8 +99,6 @@
       gridColNum = data.length,
       facetW = (chartSpaceW - axisSize * 2)/gridRowNum,
       facetH = (chartSpaceH - axisSize * 2)/gridColNum;
-  var chartW = facetW,
-      chartH = facetH;
 
 
   var facetRow = svg.selectAll('g.facet-row')
@@ -131,27 +119,37 @@
       .data(function(d, i){ return d; })
       .enter().append('g')
       .classed('facet-group', true);
+  // y axis
   facetGroup.filter(function(d, i){ return i == 0; }).append('rect').classed('axis-y', true)
       .attr({
         x: chartSpaceX,
-        y: function(d, i, pI){ return chartSpaceY + axisSize + chartH * pI; },
+        y: function(d, i, pI){ return chartSpaceY + axisSize + facetH * pI; },
         width: axisSize,
         height: facetH
       });
+  // y tab
   facetGroup.filter(function(d, i){ return i == data[0].length - 1; }).append('rect').classed('tab-y', true)
       .attr({
-        x: function(d, i, pI){ return chartSpaceX + axisSize + chartW * data[pI].length - 1; },
-        y: function(d, i, pI){ return chartSpaceY + axisSize + chartH * pI; },
+        x: function(d, i, pI){ return chartSpaceX + axisSize + facetW * data[pI].length - 1; },
+        y: function(d, i, pI){ return chartSpaceY + axisSize + facetH * pI; },
         width: axisSize,
         height: facetH
       });
-  facetGroup.append('rect')
+
+  // chart
+  facetGroup.append('g')
       .attr({
         'class': function(d, i, pI){ return 'chart_' + [i, pI].join('-'); },
-        x: function(d, i){ return chartSpaceX + axisSize + chartW * i; },
-        y:function(d, i, pI){ return chartSpaceY + axisSize + chartH * pI; },
-        width: chartW,
-        height: chartH
+        transform: function(d, i, pI){
+          var x = chartSpaceX + axisSize + facetW * i;
+          var y = chartSpaceY + axisSize + facetH * pI;
+          return 'translate('+[x, y]+')';
+        },
+        width: facetW,
+        height: facetH
+      })
+      .style({
+        fill: 'skyblue'
       })
       .classed('chart', true);
 
@@ -159,11 +157,12 @@
       .data(function(d, i){ return d; })
       .enter().append('g')
       .classed('row-tab-x', true);
+  // x tab
   facetTabs.append('rect').classed('tab-x', true)
       .attr({
-        x: function(d, i, pI){ return chartSpaceX + axisSize + chartW * i; },
-        y: function(d, i, pI){ return chartSpaceY + chartH * pI; },
-        width: chartW,
+        x: function(d, i, pI){ return chartSpaceX + axisSize + facetW * i; },
+        y: function(d, i, pI){ return chartSpaceY + facetH * pI; },
+        width: facetW,
         height: axisSize
       });
 
@@ -171,12 +170,27 @@
       .data(function(d, i){ return d; })
       .enter().append('g')
       .classed('row-axis-x', true);
+  // x axis
   facetTabs.append('rect').classed('axis-x', true)
       .attr({
-        x: function(d, i){ return chartSpaceX + axisSize + chartW * i; },
-        y: function(d, i){ return chartSpaceY + axisSize + chartH * data.length; },
-        width: chartW,
+        x: function(d, i){ return chartSpaceX + axisSize + facetW * i; },
+        y: function(d, i){ return chartSpaceY + axisSize + facetH * data.length; },
+        width: facetW,
         height: axisSize
+      });
+
+
+  // charts
+  //////////////////////////////////////////////////////
+
+  d3.selectAll('.chart')
+      .call(d3.custom.PlainBarChart().width(facetW).height(facetH))
+
+  d3.selectAll('g.row-tab-x')
+      .each(function(d, i){
+        d3.select(this)
+            .append('text')
+            .text(function(d, i){ return 'test' + i; })
       });
 
 

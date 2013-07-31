@@ -1,4 +1,4 @@
-d3.custom = {};
+d3.custom = d3.custom || {};
 
 d3.custom.Grid = function module() {
     var width = 200,

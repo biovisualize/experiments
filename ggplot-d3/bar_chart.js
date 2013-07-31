@@ -1,4 +1,4 @@
-d3.custom = {};
+d3.custom = d3.custom || {};
 
 d3.custom.BarChart = function module() {
     var margin = {top: 20, right: 20, bottom: 40, left: 40},
