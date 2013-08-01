@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-    <title></title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <title></title>
   <script type='text/javascript' src="../lib/d3.js"></script>
   <script type='text/javascript' src="plain_bar_chart.js"></script>
-  <script type='text/javascript' src="container.js"></script>
+  <script type='text/javascript' src="labels.js"></script>
+  <script type='text/javascript' src="facets.js"></script>
+  <script type='text/javascript' src="axes.js"></script>
   <style>
     body {
       font: 14px sans-serif;
@@ -50,11 +52,14 @@
 
 /*
 TODO:
--title rotation
--padding
 -data input
+-wrap axis and scale
+-single chart
+-zoom to single chart
+
+-free scale
 -legend
--
+-brush
 */
 
   /*
@@ -109,25 +114,17 @@ TODO:
   var showZones = false;
 
 
-  // facets
-  //////////////////////////////////////////////////////
-
   // chart space
   var w = 800, h = 500,
       titleSize = 25,
       legendSize = 60,
-      chartSpaceX = titleSize,
-      chartSpaceY = titleSize,
-      chartSpaceW = w - titleSize - legendSize,
-      chartSpaceH = h - titleSize * 2,
-      gap = 5;
-
-  var axisSize = 25,
+      gap = 5,
+      axisSize = 25,
       tabSize = 25,
       gridRowNum = data.length,
       gridColNum = data[0].length,
-      facetW = (chartSpaceW - axisSize - tabSize)/gridColNum,
-      facetH = (chartSpaceH - axisSize - tabSize)/gridRowNum;
+      facetW = (w - titleSize - legendSize - axisSize - tabSize) / gridColNum,
+      facetH = (h - titleSize * 2 - axisSize - tabSize) / gridRowNum;
 
   var svg = d3.select('#container2').append('svg')
       .attr({width: w, height: h});
@@ -135,175 +132,59 @@ TODO:
   // titles
   //////////////////////////////////////////////////////
 
-  var titles = svg.append('g').classed('titles', true);
+  var labels = d3.custom.Labels()
+      .config({
+        w: w,
+        h: h,
+        titleSize: titleSize,
+        showZones: showZones,
+        legendSize: legendSize
+      });
 
-  // y axis label
-  var axisLabelY = titles.append('g').classed('axis-label-y', true)
-      .attr({transform: 'translate('+[0, titleSize]+')'});
-  axisLabelY.append('rect')
-      .attr({width: titleSize, height: h - titleSize * 2})
-      .style({visibility: showZones? 'visible' : 'hidden'});
-  var text = axisLabelY.append('text')
-      .text('Y Axis Label'); //hardcoded
-  var textBBox = text.node().getBBox();
-  text.attr({dy: textBBox.height, transform: 'rotate(-90) translate(-'+ (h - titleSize * 2 + textBBox.width) / 2 +',0)'});
+  svg.call(labels);
 
-  // chart title
-  var chartTitle = titles.append('g').classed('chart-title', true)
-      .attr({transform: 'translate('+[titleSize, 0]+')'});
-  chartTitle.append('rect')
-      .attr({width: w - titleSize - legendSize, height: titleSize})
-      .style({visibility: showZones? 'visible' : 'hidden'});
-  var text = chartTitle.append('text')
-      .text('Chart Title') //hardcoded
-  var textBBox = text.node().getBBox();
-  text.attr({dy: (textBBox.height + titleSize) / 2, dx: (w - titleSize - legendSize - textBBox.width) / 2});
-
-  // legend
-  var legend = titles.append('g').classed('legend', true)
-      .attr({transform: 'translate('+[w - legendSize, titleSize]+')'});
-  legend.append('rect')
-      .attr({width: legendSize, height: h - titleSize * 2})
-      .style({visibility: showZones? 'visible' : 'hidden'});
-  var textBBox = text.node().getBBox();
-  legend.append('text')
-      .attr({dy: textBBox.height})
-      .text('Legend');
-
-  // x axis label
-  var axisLabelX = titles.append('g').classed('axis-label-x', true)
-      .attr({transform: 'translate('+[titleSize, h - titleSize]+')'});
-  axisLabelX.append('rect')
-      .attr({width: w - titleSize - legendSize, height: titleSize})
-      .style({visibility: showZones? 'visible' : 'hidden'});
-  var text = axisLabelX.append('text')
-      .text('X Axis Label'); //hardcoded
-  var textBBox = text.node().getBBox();
-  text.attr({dy: (textBBox.height + titleSize) / 2, dx: (w - titleSize - legendSize - textBBox.width) / 2});
 
   // facets
   //////////////////////////////////////////////////////
 
-  var facetRow = svg.selectAll('g.facet-row')
-      .data(data)
-      .enter().append('g')
-      .classed('facet-row', true);
-  var facetGroup = facetRow.selectAll('g.facet-group')
-      .data(function(d, i){ return d; })
-      .enter().append('g')
-      .classed('facet-group', true);
-
-  // y axis
-  var axisGroupY = facetGroup.filter(function(d, i){ return i == 0; }).append('g').classed('axis-group-y', true)
-      .attr({transform: function(d, i, pI){ return 'translate('+[chartSpaceX, chartSpaceY + tabSize + facetH * pI]+')';}})
-  axisGroupY.append('rect')
-      .attr({
-        width: axisSize,
-        height: facetH - gap
-      })
-      .style({visibility: showZones? 'visible' : 'hidden'});
-
-  // y tab
-  var tabGroupY = facetGroup.filter(function(d, i){ return i == data[0].length - 1; })
-      .append('g').classed('tab-group-y', true)
-      .attr({transform: function(d, i, pI){ return 'translate('+[chartSpaceX + axisSize + facetW * data[pI].length - 1 - gap, chartSpaceY + tabSize + facetH * pI]+')';}});
-  tabGroupY.append('rect').classed('tab-y', true)
-      .attr({
-        width: tabSize + gap,
-        height: facetH - gap
+  var facets = d3.custom.Facets()
+      .config({
+        x: titleSize,
+        y: titleSize,
+        facetW: facetW,
+        facetH: facetH,
+        tabSize: tabSize,
+        axisSize: axisSize,
+        gap: gap,
+        showZones: showZones,
+        gridColNum: gridColNum,
+        gridRowNum: gridRowNum
       });
-  var text = tabGroupY.append('text')
-      .text('test');
-  var textBBox = text.node().getBBox();
-      text.attr({dy: textBBox.height, transform: 'rotate(90) translate('+[facetH / 2 - textBBox.width / 2, -textBBox.height - tabSize / 2]+')'});
 
-  // x tab
-  var facetTabs = facetRow.filter(function(d, i){ return i == 0; }).selectAll('g.tab-group-x')
-      .data(function(d, i){ return d; })
-      .enter().append('g')
-      .classed('tab-group-x', true)
-      .attr({transform: function(d, i, pI){ return 'translate('+[chartSpaceX + axisSize + facetW * i, chartSpaceY + facetH * pI]+')';}});
-  facetTabs.append('rect').classed('tab-rect-x', true)
-      .attr({
-        width: facetW - gap,
-        height: tabSize
-      });
-  var text = facetTabs.append('text').classed('tab-rect-x', true)
-      .text('test') //hardcoded
-  var textBBox = text.node().getBBox();
-  text.attr({dy: textBBox.height, dx: (facetW - textBBox.width) / 2});
-
-  // x axis
-  var facetTabs = facetRow.filter(function(d, i){ return i == data.length - 1; }).selectAll('g.axis-group-x')
-      .data(function(d, i){ return d; })
-      .enter().append('g')
-      .classed('axis-group-x', true)
-      .attr({transform: function(d, i){ return 'translate('+[chartSpaceX + axisSize + facetW * i, chartSpaceY + tabSize + facetH * data.length - gap]+')'; }});
-  facetTabs.append('rect').classed('axis-x', true)
-      .attr({
-        width: facetW - gap,
-        height: axisSize + gap
-      })
-      .style({visibility: showZones? 'visible' : 'hidden'});
+  svg.call(facets);
 
   // chart
   //////////////////////////////////////////////////////
-  facetGroup.append('g')
-      .attr({
-        'class': function(d, i, pI){ return 'chart_' + [i, pI].join('-'); },
-        transform: function(d, i, pI){
-          var x = chartSpaceX + axisSize + facetW * i;
-          var y = chartSpaceY + tabSize + facetH * pI;
-          return 'translate('+[x, y]+')';
-        }
-      })
-      .classed('chart', true);
-
 
   var dataY = [1, 2, 3, 4, 5, 6];
   var dataX = ['A', 'B', 'C', 'D', 'E', 'F'];
 
-  var x1 = d3.scale.ordinal()
-      .domain(dataX)
-      .rangeRoundBands([0, facetW - gap], .1);
-
-  var y1 = d3.scale.linear()
-      .domain([0, d3.max(dataY)])
-      .range([facetH - gap, 0]);
-
-  var xAxis = d3.svg.axis()
-      .scale(x1)
-      .orient('bottom');
-
-  var yAxis = d3.svg.axis()
-      .scale(y1)
-      .orient('left');
-
-  svg.select('.x-axis-group.axis')
-      .attr({transform: 'translate(0,' + (facetH) + ')'})
-      .call(xAxis);
-
-  svg.select('.y-axis-group.axis')
-      .call(yAxis);
+  var axes = d3.custom.Axes()
+      .config({
+        facetW: facetW,
+        facetH: facetH,
+        gap: gap,
+        dataX: dataX,
+        dataY: dataY,
+        axisSize: axisSize
+      });
+  svg.call(axes)
 
 
   var chartW = facetW - gap;
   var chartH = facetH - gap;
   d3.selectAll('.chart')
       .call(d3.custom.PlainBarChart().width(chartW).height(chartH));
-
-  d3.selectAll('.axis-group-y')
-      .each(function(d, i){
-        d3.select(this).append('g')
-            .attr({transform: 'translate('+ axisSize +',0)'})
-            .call(yAxis);
-      });
-
-  d3.selectAll('.axis-group-x')
-      .each(function(d, i){
-        d3.select(this).append('g')
-            .call(xAxis);
-      });
 
 
 

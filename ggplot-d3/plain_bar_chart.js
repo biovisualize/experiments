@@ -1,11 +1,9 @@
 d3.custom = d3.custom || {};
 
 d3.custom.PlainBarChart = function module() {
-    varwidth = 300,
+    var width = 300,
         height = 300,
-        gap = 0,
-        ease = 'cubic-in-out';
-    var svg, duration = 0;
+        gap = 0;
 
     var dispatch = d3.dispatch('customHover');
     function exports(_selection) {
@@ -14,18 +12,15 @@ d3.custom.PlainBarChart = function module() {
             var dataY = [1, 2, 3, 4, 5, 6];
             var dataX = ['A', 'B', 'C', 'D', 'E', 'F'];
 
-            var chartW = width,
-                chartH = height;
-
             var x1 = d3.scale.ordinal()
                 .domain(dataX)
-                .rangeRoundBands([0, chartW], .1);
+                .rangeRoundBands([0, width], .1);
 
             var y1 = d3.scale.linear()
                 .domain([0, d3.max(dataY)])
-                .range([chartH, 0]);
+                .range([height, 0]);
 
-            var barW = chartW / _data.length;
+            var barW = width / _data.length;
 
             var geometryGroup = d3.select(this)
                 .selectAll('g.geometry')
@@ -45,14 +40,14 @@ d3.custom.PlainBarChart = function module() {
             bars.enter().append('rect')
                 .classed('bar', true)
                 .attr({
-                    x: chartW
+                    x: width
                 })
                 .on('mouseover', dispatch.customHover);
             bars.attr({
                     width: barW,
                     x: function(d, i) { return x1(i) + gapSize/2; },
                     y: function(d, i) { return y1(d); },
-                    height: function(d, i) { return chartH - y1(d); }
+                    height: function(d, i) { return height - y1(d); }
                 });
             bars.exit().style({opacity: 0}).remove();
 
