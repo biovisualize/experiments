@@ -5,38 +5,47 @@ d3.custom.Axes = function module() {
         facetW: 250,
         facetH: 250,
         gap: 5,
-        dataX: ['A', 'B', 'C', 'D', 'E', 'F'],
-        dataY: [1, 2, 3, 4, 5, 6],
-        axisSize: 25
+        axisSize: 25,
+        dimensionX: null,
+        dimensionY: null,
+        axisContainerX: null,
+        axisContainerY: null
     };
+    var scaleX, scaleY;
 
     function exports(_selection) {
         _selection.each(function(_data) {
 
-            var x1 = d3.scale.ordinal()
-                .domain(config.dataX)
+            var dataMergedX = d3.merge(d3.merge(_data));
+            var dataMergedY = dataMergedX;
+
+            var dataX = dataMergedX.map(function(d, i){ return d[config.dimensionX]; });
+            var dataY = dataMergedY.map(function(d, i){ return d[config.dimensionY]; });
+
+            scaleX = d3.scale.ordinal()
+                .domain(dataX)
                 .rangeRoundBands([0, config.facetW - config.gap], .1);
 
-            var y1 = d3.scale.linear()
-                .domain([0, d3.max(config.dataY)])
+            scaleY = d3.scale.linear()
+                .domain([0, d3.max(dataY)])
                 .range([config.facetH - config.gap, 0]);
 
             var xAxis = d3.svg.axis()
-                .scale(x1)
+                .scale(scaleX)
                 .orient('bottom');
 
             var yAxis = d3.svg.axis()
-                .scale(y1)
+                .scale(scaleY)
                 .orient('left');
 
-            d3.select(this).selectAll('.axis-group-y')
+            d3.select(this).selectAll(config.axisContainerX)
                 .each(function(d, i){
                     d3.select(this).append('g')
                         .attr({transform: 'translate('+ config.axisSize +',0)'})
                         .call(yAxis);
                 });
 
-            d3.select(this).selectAll('.axis-group-x')
+            d3.select(this).selectAll(config.axisContainerY)
                 .each(function(d, i){
                     d3.select(this).append('g')
                         .call(xAxis);
@@ -44,6 +53,12 @@ d3.custom.Axes = function module() {
 
         });
     }
+    exports.getScaleX = function(){
+        return scaleX;
+    };
+    exports.getScaleY = function(){
+        return scaleY;
+    };
     exports.config = function(_x) {
         if (!arguments.length) return config;
         for(x in _x) if(x in config) config[x] = _x[x];

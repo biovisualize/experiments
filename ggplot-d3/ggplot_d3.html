@@ -25,7 +25,7 @@
       fill: steelblue;
     }
     svg{
-      border: 1px solid silver;
+      border: 1px solid #eee;
     }
     svg rect{
       fill: aliceblue;
@@ -45,8 +45,7 @@
 </head>
 <body>
 
-<!--<div id="container"></div>-->
-<div id="container2"></div>
+<div id="container"></div>
 
 <script type="text/javascript">
 
@@ -74,115 +73,161 @@ TODO:
     -decoupled from data format
     -testable (not just testing any output)
     -update/enter/exit
+    -bug like overlapping bars
    */
 
 
-  // data
-  //////////////////////////////////////////////////////
+// data
+//////////////////////////////////////////////////////
 
-  function shuffle(d){for(var c=d.length-1;c>0;c--){var b=Math.floor(Math.random()*(c+1));var a=d[c];d[c]=d[b];d[b]=a}return d};
-  function pickRandom(arr){ return Math.floor(arr[~~(Math.random()*arr.length)]*100)/100; }
-  function range(lower, upper){ return d3.range(upper-lower).map(function(d, i){ return d+lower; }); }
-  function randomColor(){ return 'rgb('+~~(Math.random()*100+155)+','+~~(Math.random()*100+155)+','+~~(Math.random()*100+155)+')'; }
-  var letters = d3.range(26).map(function(d, i){ return String.fromCharCode(d + 65); });
-  var shuffleLetters = shuffle(letters);
+function shuffle(d){for(var c=d.length-1;c>0;c--){var b=Math.floor(Math.random()*(c+1));var a=d[c];d[c]=d[b];d[b]=a}return d};
+function pickRandom(arr){ return Math.floor(arr[~~(Math.random()*arr.length)]*100)/100; }
+function range(lower, upper){ return d3.range(upper-lower).map(function(d, i){ return d+lower; }); }
+function randomColor(){ return 'rgb('+~~(Math.random()*100+155)+','+~~(Math.random()*100+155)+','+~~(Math.random()*100+155)+')'; }
+var letters = d3.range(26).map(function(d, i){ return String.fromCharCode(d + 65); });
+var shuffleLetters = shuffle(letters);
 
-  function generateDataset(){
-    return d3.range(8).map(function(d, i){
-      var rndLetter = shuffleLetters.pop(~~(Math.random()*(letters.length)));
-      return {
-        car: rndLetter,
-        mpg: ~~(Math.random()*30 + 1),
-        gear: ~~(Math.random()*3) + 1,
-        wt: 1,
-        cyl: pickRandom([4, 6, 8]),
-        qsec: pickRandom(range(15, 25)),
-        hp: pickRandom(range(90, 500)),
-        am: pickRandom([0, 1]),
-        vs: pickRandom([0, 1])
-      };
+function generateDataset(){
+  return d3.range(8).map(function(d, i){
+    var rndLetter = shuffleLetters.pop(~~(Math.random()*(letters.length)));
+    return {
+      car: rndLetter,
+      mpg: ~~(Math.random()*30 + 1),
+      gear: ~~(Math.random()*3) + 1,
+      wt: 1,
+      cyl: pickRandom([4, 6, 8]),
+      qsec: pickRandom(range(15, 25)),
+      hp: pickRandom(range(90, 500)),
+      am: pickRandom([0, 1]),
+      vs: pickRandom([0, 1])
+    };
+  });
+}
+
+function uniquesFromObject(arr, key){
+  var uniques = arr.map(function(d, i){ return d[key];}).filter(function(value, index, self){ return self.indexOf(value) === index; });
+  return uniques.sort(function compareNumbers(a, b) { return a - b;});
+}
+
+function groups(_data, _keyA, _keyB){
+  var uniqueA = uniquesFromObject(_data, _keyA);
+  var uniqueB = uniquesFromObject(_data, _keyB);
+  var groups = [];
+  uniqueB.forEach(function(d, i){
+    groups.push(uniqueA.map(function(d_2, i_2){
+      return _data.filter(function(d_3, i_3){ return d_3[_keyA] === d_2 && d_3[_keyB] === d; });
+    }));
+  });
+
+  return groups;
+}
+
+var data = generateDataset();
+
+var spec = {
+  x: 'gear',
+  y: 'mpg',
+  groupX: 'vs',
+  groupY: 'cyl'
+};
+
+var uniquesX = uniquesFromObject(data, spec.groupX);
+var uniquesY = uniquesFromObject(data, spec.groupY);
+var dataGrouped = groups(data, spec.groupX, spec.groupY);
+console.log(JSON.stringify(dataGrouped));
+
+
+// common config
+var w = 800, h = 500,
+    titleSize = 25,
+    legendSize = 60,
+    gap = 5,
+    axisSize = 25,
+    tabSize = 25,
+    gridRowNum = dataGrouped.length,
+    gridColNum = dataGrouped[0].length,
+    facetW = (w - titleSize - legendSize - axisSize - tabSize) / gridColNum,
+    facetH = (h - titleSize * 2 - axisSize - tabSize) / gridRowNum;
+
+var svg = d3.select('#container').append('svg')
+    .attr({width: w, height: h});
+
+// titles
+//////////////////////////////////////////////////////
+
+var labels = d3.custom.Labels()
+    .config({
+      w: w,
+      h: h,
+      titleSize: titleSize,
+      legendSize: legendSize,
+      chartTitleText: spec.x + ' and ' + spec.y + ' grouped by ' + spec.groupX + ' and ' + spec.groupY,
+      axisTitleX: spec.x,
+      axisTitleY: spec.y
     });
-  }
+
+svg.call(labels);
 
 
-  var data = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]];
-//  var data = [[0, 1, 2], [4, 5, 6], [8, 9, 10]];
-//  var data = [[0, 1, 2, 3], [4, 5, 6, 7]];
+// facets
+//////////////////////////////////////////////////////
+
+var facets = d3.custom.Facets()
+    .config({
+      x: titleSize,
+      y: titleSize,
+      facetW: facetW,
+      facetH: facetH,
+      tabSize: tabSize,
+      axisSize: axisSize,
+      gap: gap,
+      gridColNum: gridColNum,
+      gridRowNum: gridRowNum,
+      tabTitlesX: uniquesX,
+      tabTitlesY: uniquesY
+    });
+
+svg.datum(dataGrouped).call(facets);
 
 
-  // chart space
-  var w = 800, h = 500,
-      titleSize = 25,
-      legendSize = 60,
-      gap = 5,
-      axisSize = 25,
-      tabSize = 25,
-      gridRowNum = data.length,
-      gridColNum = data[0].length,
-      facetW = (w - titleSize - legendSize - axisSize - tabSize) / gridColNum,
-      facetH = (h - titleSize * 2 - axisSize - tabSize) / gridRowNum;
+// axes
+//////////////////////////////////////////////////////
 
-  var svg = d3.select('#container2').append('svg')
-      .attr({width: w, height: h});
-
-  // titles
-  //////////////////////////////////////////////////////
-
-  var labels = d3.custom.Labels()
-      .config({
-        w: w,
-        h: h,
-        titleSize: titleSize,
-        legendSize: legendSize
-      });
-
-  svg.call(labels);
+/*
+-better way to pass axes container
+ */
 
 
-  // facets
-  //////////////////////////////////////////////////////
-
-  var facets = d3.custom.Facets()
-      .config({
-        x: titleSize,
-        y: titleSize,
-        facetW: facetW,
-        facetH: facetH,
-        tabSize: tabSize,
-        axisSize: axisSize,
-        gap: gap,
-        gridColNum: gridColNum,
-        gridRowNum: gridRowNum
-      });
-
-  svg.call(facets);
-
-  // axes
-  //////////////////////////////////////////////////////
-
-  var dataY = [1, 2, 3, 4, 5, 6];
-  var dataX = ['A', 'B', 'C', 'D', 'E', 'F'];
-
-  var axes = d3.custom.Axes()
-      .config({
-        facetW: facetW,
-        facetH: facetH,
-        gap: gap,
-        dataX: dataX,
-        dataY: dataY,
-        axisSize: axisSize
-      });
-  svg.call(axes)
+var axes = d3.custom.Axes()
+    .config({
+      facetW: facetW,
+      facetH: facetH,
+      gap: gap,
+      axisSize: axisSize,
+      dimensionX: spec.x,
+      dimensionY: spec.y,
+      axisContainerX: '.axis-group-y',
+      axisContainerY: '.axis-group-x'
+    });
+svg.call(axes);
 
 
-  // chart
-  //////////////////////////////////////////////////////
+// chart
+//////////////////////////////////////////////////////
 
-  var chartW = facetW - gap;
-  var chartH = facetH - gap;
-  d3.selectAll('.chart')
-      .datum(dataY)
-      .call(d3.custom.PlainBarChart().width(chartW).height(chartH));
+var chartW = facetW - gap;
+var chartH = facetH - gap;
+d3.selectAll('.chart')
+  .call(d3.custom.PlainBarChart()
+    .config({
+      facetW: chartW,
+      facetH: chartH,
+      scaleX: axes.getScaleX(),
+      scaleY: axes.getScaleY(),
+      dimensionX: spec.x,
+      dimensionY: spec.y
+    })
+  );
 
 
 

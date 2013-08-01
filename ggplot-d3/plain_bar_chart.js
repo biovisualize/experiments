@@ -1,26 +1,18 @@
 d3.custom = d3.custom || {};
 
 d3.custom.PlainBarChart = function module() {
-    var width = 300,
-        height = 300,
-        gap = 0;
+    var config = {
+        facetW: 300,
+        facetH: 300,
+        scaleX: null,
+        scaleY: null,
+        dimensionX: null,
+        dimensionY: null
+    };
 
     var dispatch = d3.dispatch('customHover');
     function exports(_selection) {
         _selection.each(function(_data) {
-
-            var dataY = _data;
-            var dataX = ['A', 'B', 'C', 'D', 'E', 'F'];
-
-            var x1 = d3.scale.ordinal()
-                .domain(dataX)
-                .rangeRoundBands([0, width], .1);
-
-            var y1 = d3.scale.linear()
-                .domain([0, d3.max(dataY)])
-                .range([height, 0]);
-
-            var barW = width / _data.length;
 
             var geometryGroup = d3.select(this)
                 .selectAll('g.geometry')
@@ -30,43 +22,34 @@ d3.custom.PlainBarChart = function module() {
                 .classed('geometry', true)
                 .append('rect')
                 .classed('panel', true)
-                .attr({width: width, height: height});
-            geometryGroup.attr({width: width, height: height})
+                .attr({width: config.facetW, height: config.facetH});
+            geometryGroup.attr({width: config.facetW, height: config.facetH})
 
-            var gapSize = x1.rangeBand() / 100 * gap;
-            var barW = x1.rangeBand() - gapSize;
+            var barW = config.scaleX.rangeBand();
             var bars = geometryGroup.selectAll('.bar')
-                .data(dataY);
+                .data(_data);
             bars.enter().append('rect')
                 .classed('bar', true)
                 .attr({
-                    x: width
+                    x: config.facetW
                 })
-                .on('mouseover', dispatch.customHover);
+                .style({opacity: 1})
+                .on('mouseover', dispatch.customHover)
+                .on('mouseover', function(d, i){ console.log(_data[i]); });
             bars.attr({
                     width: barW,
-                    x: function(d, i) { return x1(i) + gapSize/2; },
-                    y: function(d, i) { return y1(d); },
-                    height: function(d, i) { return height - y1(d); }
+                    x: function(d, i) { return config.scaleX(d[config.dimensionX]); },
+                    y: function(d, i) { return config.scaleY(d[config.dimensionY]); },
+                    height: function(d, i) {
+                        return config.facetH - config.scaleY(d[config.dimensionY]); }
                 });
             bars.exit().style({opacity: 0}).remove();
 
         });
     }
-    exports.width = function(_x) {
-        if (!arguments.length) return width;
-        width = _x;
-        return this;
-    };
-    exports.height = function(_x) {
-        if (!arguments.length) return height;
-        height = _x;
-        duration = 0;
-        return this;
-    };
-    exports.gap = function(_x) {
-        if (!arguments.length) return gap;
-        gap = _x;
+    exports.config = function(_x) {
+        if (!arguments.length) return config;
+        for(x in _x) if(x in config) config[x] = _x[x];
         return this;
     };
     d3.rebind(exports, dispatch, 'on');

@@ -10,14 +10,16 @@ d3.custom.Facets = function module() {
         axisSize: 25,
         gap: 5,
         gridColNum: 4,
-        gridRowNum: 3
+        gridRowNum: 3,
+        tabTitlesX: null,
+        tabTitlesY: null
     };
 
     function exports(_selection) {
         _selection.each(function(_data) {
 
             var facetRow = d3.select(this).selectAll('g.facet-row')
-                .data(d3.range(config.gridRowNum).map(function(d, i){ return d3.range(config.gridColNum); }))
+                .data(_data)
                 .enter().append('g')
                 .classed('facet-row', true);
             var facetGroup = facetRow.selectAll('g.facet-group')
@@ -25,24 +27,16 @@ d3.custom.Facets = function module() {
                 .enter().append('g')
                 .classed('facet-group', true);
 
+            // x axis
+            var facetAxes = facetRow.filter(function(d, i){ return i == config.gridRowNum - 1; }).selectAll('g.axis-group-x')
+                .data(function(d, i){ return d; })
+                .enter().append('g')
+                .classed('axis-group-x', true)
+                .attr({transform: function(d, i){ return 'translate('+[config.x + config.axisSize + config.facetW * i, config.y + config.tabSize + config.facetH * config.gridRowNum - config.gap]+')'; }});
+
             // y axis
             var axisGroupY = facetGroup.filter(function(d, i){ return i == 0; }).append('g').classed('axis-group-y', true)
                 .attr({transform: function(d, i, pI){ return 'translate('+[config.x, config.y + config.tabSize + config.facetH * pI]+')';}})
-
-            // y tab
-            var tabGroupY = facetGroup.filter(function(d, i){ return i == config.gridColNum - 1; })
-                .append('g').classed('tab-group-y', true)
-                .attr({transform: function(d, i, pI){ return 'translate('+[config.x + config.axisSize + config.facetW * config.gridColNum - 1 - config.gap, config.y + config.tabSize + config.facetH * pI]+')';}});
-            tabGroupY.append('rect').classed('tab-y', true)
-                .attr({
-                    width: config.tabSize + config.gap,
-                    height: config.facetH - config.gap
-                });
-            var text = tabGroupY.append('text')
-                .text('test');
-            var textBBox = text.node().getBBox();
-            text.attr({dy: textBBox.height, transform: 'rotate(90) translate('+
-                [config.facetH / 2 - textBBox.width / 2, -textBBox.height - config.tabSize / 2]+')'});
 
             // x tab
             var facetTabs = facetRow.filter(function(d, i){ return i == 0; }).selectAll('g.tab-group-x')
@@ -56,17 +50,26 @@ d3.custom.Facets = function module() {
                     height: config.tabSize
                 });
             var text = facetTabs.append('text').classed('tab-rect-x', true)
-                .text('test') //hardcoded
+                .text(function(d, i, pI){ return config.tabTitlesX[i]; })
             var textBBox = text.node().getBBox();
             text.attr({dy: textBBox.height, dx: (config.facetW - textBBox.width) / 2});
 
-            // x axis
-            var facetTabs = facetRow.filter(function(d, i){ return i == config.gridRowNum - 1; }).selectAll('g.axis-group-x')
-                .data(function(d, i){ return d; })
-                .enter().append('g')
-                .classed('axis-group-x', true)
-                .attr({transform: function(d, i){ return 'translate('+[config.x + config.axisSize + config.facetW * i, config.y + config.tabSize + config.facetH * config.gridRowNum - config.gap]+')'; }});
+            // y tab
+            var tabGroupY = facetGroup.filter(function(d, i){ return i == config.gridColNum - 1; })
+                .append('g').classed('tab-group-y', true)
+                .attr({transform: function(d, i, pI){ return 'translate('+[config.x + config.axisSize + config.facetW * config.gridColNum - 1 - config.gap, config.y + config.tabSize + config.facetH * pI]+')';}});
+            tabGroupY.append('rect').classed('tab-y', true)
+                .attr({
+                    width: config.tabSize + config.gap,
+                    height: config.facetH - config.gap
+                });
+            var text = tabGroupY.append('text')
+                .text(function(d, i, pI){ return config.tabTitlesY[pI]; });
+            var textBBox = text.node().getBBox();
+            text.attr({dy: textBBox.height, transform: 'rotate(90) translate('+
+                [config.facetH / 2 - textBBox.width / 2, -textBBox.height - config.tabSize / 2]+')'});
 
+            // chart
             facetGroup.append('g')
                 .attr({
                     'class': function(d, i, pI){ return 'chart_' + [i, pI].join('-'); },

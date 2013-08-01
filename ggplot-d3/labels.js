@@ -5,7 +5,10 @@ d3.custom.Labels = function module() {
         titleSize: 25,
         w: 800,
         h: 500,
-        legendSize: 60
+        legendSize: 60,
+        chartTitleText: 'chart title',
+        axisTitleX: 'x',
+        axisTitleY: 'y'
     };
 
     function exports(_selection) {
@@ -17,7 +20,7 @@ d3.custom.Labels = function module() {
             var axisLabelY = titles.append('g').classed('axis-label-y', true)
                 .attr({transform: 'translate('+[0, config.titleSize]+')'});
             var text = axisLabelY.append('text')
-                .text('Y Axis Label'); //hardcoded
+                .text(config.axisTitleY);
             var textBBox = text.node().getBBox();
             text.attr({dy: textBBox.height, transform: 'rotate(-90) translate(-'+ (config.h - config.titleSize * 2 + textBBox.width) / 2 +',0)'});
 
@@ -25,9 +28,9 @@ d3.custom.Labels = function module() {
             var chartTitle = titles.append('g').classed('chart-title', true)
                 .attr({transform: 'translate('+[config.titleSize, 0]+')'});
             var text = chartTitle.append('text')
-                .text('Chart Title') //hardcoded
+                .text(config.chartTitleText)
             var textBBox = text.node().getBBox();
-            text.attr({dy: (textBBox.height + config.titleSize) / 2, dx: (config.w - config.titleSize - config.legendSize - textBBox.width) / 2});
+            text.attr({dy: (textBBox.height + config.titleSize) / 3, dx: (config.w - config.titleSize - config.legendSize - textBBox.width) / 2});
 
             // legend
             var legend = titles.append('g').classed('legend', true)
@@ -41,10 +44,9 @@ d3.custom.Labels = function module() {
             var axisLabelX = titles.append('g').classed('axis-label-x', true)
                 .attr({transform: 'translate('+[config.titleSize, config.h - config.titleSize]+')'});
             var text = axisLabelX.append('text')
-                .text('X Axis Label'); //hardcoded
+                .text(config.axisTitleX);
             var textBBox = text.node().getBBox();
-            text.attr({dy: (textBBox.height + config.titleSize) / 2, dx: (config.w - config.titleSize - config.legendSize - textBBox.width) / 2});
-
+            text.attr({dy: (textBBox.height + config.titleSize) / 3, dx: (config.w - config.titleSize - config.legendSize - textBBox.width) / 2});
 
         });
     }
