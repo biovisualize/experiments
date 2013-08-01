@@ -29,6 +29,16 @@
       fill: aliceblue;
       stroke: grey;
     }
+    path.domain{
+      stroke: black;
+      fill: none;
+    }
+    .tick line{
+      stroke: black;
+    }
+    .tick text{
+      font-size: 8px;
+    }
   </style>
 </head>
 <body>
@@ -76,9 +86,18 @@
     });
   }
 
+  function getTextSize(text){
+    var svg = d3.select('body').append('svg');
+    var test = svg.node().appendChild(text).getBBox();
+    console.log(svg.node(), test);
+    svg.remove();
+    return 0;
+  }
+
   var data = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]];
 //  var data = [[0, 1, 2, 3], [4, 5, 6, 7]];
   var svg = d3.select('#container2').append('svg');
+  var showZones = false;
 
 
   // facets
@@ -93,50 +112,128 @@
       chartSpaceH = h - titleSize * 2;
 //  svg.append('rect').attr({x: chartSpaceX, y: chartSpaceY, width: chartSpaceW, height: chartSpaceH});
 
-  // facets
   var axisSize = 30,
       gridRowNum = data[0].length,
       gridColNum = data.length,
       facetW = (chartSpaceW - axisSize * 2)/gridRowNum,
       facetH = (chartSpaceH - axisSize * 2)/gridColNum;
 
+  // titles
+  //////////////////////////////////////////////////////
+
+  var titles = svg.append('g').classed('titles', true);
+
+  // y axis label
+  var axisLabelY = titles.append('g').classed('axis-label-y', true)
+      .attr({transform: 'translate('+[0, titleSize]+')'});
+  axisLabelY.append('rect')
+      .attr({width: titleSize, height: h - titleSize * 2})
+      .style({visibility: showZones? 'visible' : 'hidden'});
+  var text = axisLabelY.append('text')
+      .text('test'); //hardcoded
+  var textBBox = text.node().getBBox();
+  text.attr({dy: textBBox.height})
+
+  // chart title
+  var chartTitle = titles.append('g').classed('chart-title', true)
+      .attr({transform: 'translate('+[titleSize, 0]+')'});
+  chartTitle.append('rect')
+      .attr({width: w - titleSize * 2, height: titleSize})
+      .style({visibility: showZones? 'visible' : 'hidden'});
+  var text = chartTitle.append('text')
+      .text('Chart Title') //hardcoded
+  var textBBox = text.node().getBBox();
+  text.attr({dy: textBBox.height / 2 + titleSize / 2, dx: (w - titleSize * 2 - textBBox.width) / 2});
+
+  // legend
+  var legend = titles.append('g').classed('legend', true)
+      .attr({transform: 'translate('+[w - titleSize, titleSize]+')'});
+  legend.append('rect')
+      .attr({width: titleSize, height: h - titleSize * 2})
+      .style({visibility: showZones? 'visible' : 'hidden'});
+  var textBBox = text.node().getBBox();
+  legend.append('text')
+      .attr({dy: textBBox.height})
+      .text('Legend');
+
+  // x axis label
+  var axisLabelX = titles.append('g').classed('axis-label-x', true)
+      .attr({transform: 'translate('+[titleSize, h - titleSize]+')'});
+  axisLabelX.append('rect')
+      .attr({width: w - titleSize * 2, height: titleSize})
+      .style({visibility: showZones? 'visible' : 'hidden'});
+  var text = axisLabelX.append('text')
+      .text('X Axis Label'); //hardcoded
+  var textBBox = text.node().getBBox();
+  text.attr({dy: textBBox.height / 2 + titleSize / 2, dx: (w - titleSize * 2 - textBBox.width) / 2});
+
+  // facets
+  //////////////////////////////////////////////////////
 
   var facetRow = svg.selectAll('g.facet-row')
       .data(data)
       .enter().append('g')
       .classed('facet-row', true);
-
-  // y axis label
-  svg.append('rect').attr({x: 0, y: titleSize, width: titleSize, height: h - titleSize * 2});
-  // chart title
-  svg.append('rect').attr({x: titleSize, y: 0, width: w - titleSize * 2, height: titleSize});
-  // legend
-  svg.append('rect').attr({x: w - titleSize, y: titleSize, width: titleSize, height: h - titleSize * 2});
-  // x axis label
-  svg.append('rect').attr({x: titleSize, y: h - titleSize, width: w - titleSize * 2, height: titleSize});
-
   var facetGroup = facetRow.selectAll('g.facet-group')
       .data(function(d, i){ return d; })
       .enter().append('g')
       .classed('facet-group', true);
+
   // y axis
-  facetGroup.filter(function(d, i){ return i == 0; }).append('rect').classed('axis-y', true)
+  var axisGroupY = facetGroup.filter(function(d, i){ return i == 0; }).append('g').classed('axis-group-y', true)
+      .attr({transform: function(d, i, pI){ return 'translate('+[chartSpaceX, chartSpaceY + axisSize + facetH * pI]+')';}})
+  axisGroupY.append('rect')
       .attr({
-        x: chartSpaceX,
-        y: function(d, i, pI){ return chartSpaceY + axisSize + facetH * pI; },
         width: axisSize,
         height: facetH
-      });
+      })
+      .style({visibility: showZones? 'visible' : 'hidden'});
+
   // y tab
-  facetGroup.filter(function(d, i){ return i == data[0].length - 1; }).append('rect').classed('tab-y', true)
+  var tabGroupY = facetGroup.filter(function(d, i){ return i == data[0].length - 1; })
+      .append('g').classed('tab-group-y', true)
+      .attr({transform: function(d, i, pI){ return 'translate('+[chartSpaceX + axisSize + facetW * data[pI].length - 1, chartSpaceY + axisSize + facetH * pI]+')';}});
+  tabGroupY.append('rect').classed('tab-y', true)
       .attr({
-        x: function(d, i, pI){ return chartSpaceX + axisSize + facetW * data[pI].length - 1; },
-        y: function(d, i, pI){ return chartSpaceY + axisSize + facetH * pI; },
         width: axisSize,
         height: facetH
       });
+  var text = tabGroupY.append('text')
+      .text('test');
+  var textBBox = text.node().getBBox();
+      text.attr({dy: textBBox.height});
+
+  // x tab
+  var facetTabs = facetRow.filter(function(d, i){ return i == 0; }).selectAll('g.tab-group-x')
+      .data(function(d, i){ return d; })
+      .enter().append('g')
+      .classed('tab-group-x', true)
+      .attr({transform: function(d, i, pI){ return 'translate('+[chartSpaceX + axisSize + facetW * i, chartSpaceY + facetH * pI]+')';}});
+  facetTabs.append('rect').classed('tab-rect-x', true)
+      .attr({
+        width: facetW,
+        height: axisSize
+      });
+  var text = facetTabs.append('text').classed('tab-rect-x', true)
+      .text('test') //hardcoded
+  var textBBox = text.node().getBBox();
+  text.attr({dy: textBBox.height, dx: (facetW - textBBox.width) / 2});
+
+  // x axis
+  var facetTabs = facetRow.filter(function(d, i){ return i == data.length - 1; }).selectAll('g.axis-group-x')
+      .data(function(d, i){ return d; })
+      .enter().append('g')
+      .classed('axis-group-x', true)
+      .attr({transform: function(d, i){ return 'translate('+[chartSpaceX + axisSize + facetW * i, chartSpaceY + axisSize + facetH * data.length]+')'; }});
+  facetTabs.append('rect').classed('axis-x', true)
+      .attr({
+        width: facetW,
+        height: axisSize
+      })
+      .style({visibility: showZones? 'visible' : 'hidden'});
 
   // chart
+  //////////////////////////////////////////////////////
   facetGroup.append('g')
       .attr({
         'class': function(d, i, pI){ return 'chart_' + [i, pI].join('-'); },
@@ -153,44 +250,47 @@
       })
       .classed('chart', true);
 
-  var facetTabs = facetRow.filter(function(d, i){ return i == 0; }).selectAll('g.row-tab-x')
-      .data(function(d, i){ return d; })
-      .enter().append('g')
-      .classed('row-tab-x', true);
-  // x tab
-  facetTabs.append('rect').classed('tab-x', true)
-      .attr({
-        x: function(d, i, pI){ return chartSpaceX + axisSize + facetW * i; },
-        y: function(d, i, pI){ return chartSpaceY + facetH * pI; },
-        width: facetW,
-        height: axisSize
-      });
 
-  var facetTabs = facetRow.filter(function(d, i){ return i == data.length - 1; }).selectAll('g.row-axis-x')
-      .data(function(d, i){ return d; })
-      .enter().append('g')
-      .classed('row-axis-x', true);
-  // x axis
-  facetTabs.append('rect').classed('axis-x', true)
-      .attr({
-        x: function(d, i){ return chartSpaceX + axisSize + facetW * i; },
-        y: function(d, i){ return chartSpaceY + axisSize + facetH * data.length; },
-        width: facetW,
-        height: axisSize
-      });
+  var dataY = [1, 2, 3, 4, 5, 6];
+  var dataX = ['A', 'B', 'C', 'D', 'E', 'F'];
 
+  var x1 = d3.scale.ordinal()
+      .domain(dataX)
+      .rangeRoundBands([0, facetW], .1);
 
-  // charts
-  //////////////////////////////////////////////////////
+  var y1 = d3.scale.linear()
+      .domain([0, d3.max(dataY)])
+      .range([facetH, 0]);
+
+  var xAxis = d3.svg.axis()
+      .scale(x1)
+      .orient('bottom');
+
+  var yAxis = d3.svg.axis()
+      .scale(y1)
+      .orient('left');
+
+  svg.select('.x-axis-group.axis')
+      .attr({transform: 'translate(0,' + (facetH) + ')'})
+      .call(xAxis);
+
+  svg.select('.y-axis-group.axis')
+      .call(yAxis);
 
   d3.selectAll('.chart')
-      .call(d3.custom.PlainBarChart().width(facetW).height(facetH))
+      .call(d3.custom.PlainBarChart().width(facetW).height(facetH));
 
-  d3.selectAll('g.row-tab-x')
+  d3.selectAll('.axis-group-y')
       .each(function(d, i){
-        d3.select(this)
-            .append('text')
-            .text(function(d, i){ return 'test' + i; })
+        d3.select(this).append('g')
+            .attr({transform: 'translate('+axisSize+',0)'})
+            .call(yAxis);
+      });
+
+  d3.selectAll('.axis-group-x')
+      .each(function(d, i){
+        d3.select(this).append('g')
+            .call(xAxis);
       });
 
 

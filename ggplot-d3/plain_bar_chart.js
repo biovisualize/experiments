@@ -33,22 +33,16 @@ d3.custom.PlainBarChart = function module() {
                 .enter()
                 .append('g')
                 .classed('geometry', true);
-            var container = svg.append('g').classed('container-group', true);
-            container.append('g').classed('chart-group', true);
-
             svg.attr({width: width, height: height})
 
             var gapSize = x1.rangeBand() / 100 * gap;
             var barW = x1.rangeBand() - gapSize;
-            var bars = svg.select('.chart-group')
-                .selectAll('.bar')
+            var bars = svg.selectAll('.bar')
                 .data(dataY);
             bars.enter().append('rect')
                 .classed('bar', true)
-                .attr({x: chartW,
-                    width: barW,
-                    y: function(d, i) { return y1(d); },
-                    height: function(d, i) { return chartH - y1(d); }
+                .attr({
+                    x: chartW
                 })
                 .on('mouseover', dispatch.customHover);
             bars.attr({
@@ -57,20 +51,18 @@ d3.custom.PlainBarChart = function module() {
                     y: function(d, i) { return y1(d); },
                     height: function(d, i) { return chartH - y1(d); }
                 });
-            bars.exit().transition().style({opacity: 0}).remove();
-
-            duration = 500;
+            bars.exit().style({opacity: 0}).remove();
 
         });
     }
     exports.width = function(_x) {
         if (!arguments.length) return width;
-        width = parseInt(_x);
+        width = _x;
         return this;
     };
     exports.height = function(_x) {
         if (!arguments.length) return height;
-        height = parseInt(_x);
+        height = _x;
         duration = 0;
         return this;
     };
