@@ -27,17 +27,20 @@ d3.custom.PlainBarChart = function module() {
 
             var barW = chartW / _data.length;
 
-            var svg = d3.select(this)
+            var geometryGroup = d3.select(this)
                 .selectAll('g.geometry')
-                .data([0])
-                .enter()
+                .data([0]);
+            geometryGroup.enter()
                 .append('g')
-                .classed('geometry', true);
-            svg.attr({width: width, height: height})
+                .classed('geometry', true)
+                .append('rect')
+                .classed('panel', true)
+                .attr({width: width, height: height});
+            geometryGroup.attr({width: width, height: height})
 
             var gapSize = x1.rangeBand() / 100 * gap;
             var barW = x1.rangeBand() - gapSize;
-            var bars = svg.selectAll('.bar')
+            var bars = geometryGroup.selectAll('.bar')
                 .data(dataY);
             bars.enter().append('rect')
                 .classed('bar', true)

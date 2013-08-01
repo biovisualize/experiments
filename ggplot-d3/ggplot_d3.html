@@ -47,6 +47,16 @@
 <div id="container2"></div>
 
 <script type="text/javascript">
+
+/*
+TODO:
+-title rotation
+-padding
+-data input
+-legend
+-
+*/
+
   /*
     advantage of rewriting it from scratch:
     -generic faceting container
@@ -89,14 +99,13 @@
   function getTextSize(text){
     var svg = d3.select('body').append('svg');
     var test = svg.node().appendChild(text).getBBox();
-    console.log(svg.node(), test);
     svg.remove();
     return 0;
   }
 
   var data = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]];
+//  var data = [[0, 1, 2], [4, 5, 6], [8, 9, 10]];
 //  var data = [[0, 1, 2, 3], [4, 5, 6, 7]];
-  var svg = d3.select('#container2').append('svg');
   var showZones = false;
 
 
@@ -105,18 +114,23 @@
 
   // chart space
   var w = 800, h = 500,
-      titleSize = 50,
+      titleSize = 25,
+      legendSize = 60,
       chartSpaceX = titleSize,
       chartSpaceY = titleSize,
-      chartSpaceW = w - titleSize * 2,
-      chartSpaceH = h - titleSize * 2;
-//  svg.append('rect').attr({x: chartSpaceX, y: chartSpaceY, width: chartSpaceW, height: chartSpaceH});
+      chartSpaceW = w - titleSize - legendSize,
+      chartSpaceH = h - titleSize * 2,
+      gap = 5;
 
-  var axisSize = 30,
-      gridRowNum = data[0].length,
-      gridColNum = data.length,
-      facetW = (chartSpaceW - axisSize * 2)/gridRowNum,
-      facetH = (chartSpaceH - axisSize * 2)/gridColNum;
+  var axisSize = 25,
+      tabSize = 25,
+      gridRowNum = data.length,
+      gridColNum = data[0].length,
+      facetW = (chartSpaceW - axisSize - tabSize)/gridColNum,
+      facetH = (chartSpaceH - axisSize - tabSize)/gridRowNum;
+
+  var svg = d3.select('#container2').append('svg')
+      .attr({width: w, height: h});
 
   // titles
   //////////////////////////////////////////////////////
@@ -130,26 +144,26 @@
       .attr({width: titleSize, height: h - titleSize * 2})
       .style({visibility: showZones? 'visible' : 'hidden'});
   var text = axisLabelY.append('text')
-      .text('test'); //hardcoded
+      .text('Y Axis Label'); //hardcoded
   var textBBox = text.node().getBBox();
-  text.attr({dy: textBBox.height})
+  text.attr({dy: textBBox.height, transform: 'rotate(-90) translate(-'+ (h - titleSize * 2 + textBBox.width) / 2 +',0)'});
 
   // chart title
   var chartTitle = titles.append('g').classed('chart-title', true)
       .attr({transform: 'translate('+[titleSize, 0]+')'});
   chartTitle.append('rect')
-      .attr({width: w - titleSize * 2, height: titleSize})
+      .attr({width: w - titleSize - legendSize, height: titleSize})
       .style({visibility: showZones? 'visible' : 'hidden'});
   var text = chartTitle.append('text')
       .text('Chart Title') //hardcoded
   var textBBox = text.node().getBBox();
-  text.attr({dy: textBBox.height / 2 + titleSize / 2, dx: (w - titleSize * 2 - textBBox.width) / 2});
+  text.attr({dy: (textBBox.height + titleSize) / 2, dx: (w - titleSize - legendSize - textBBox.width) / 2});
 
   // legend
   var legend = titles.append('g').classed('legend', true)
-      .attr({transform: 'translate('+[w - titleSize, titleSize]+')'});
+      .attr({transform: 'translate('+[w - legendSize, titleSize]+')'});
   legend.append('rect')
-      .attr({width: titleSize, height: h - titleSize * 2})
+      .attr({width: legendSize, height: h - titleSize * 2})
       .style({visibility: showZones? 'visible' : 'hidden'});
   var textBBox = text.node().getBBox();
   legend.append('text')
@@ -160,12 +174,12 @@
   var axisLabelX = titles.append('g').classed('axis-label-x', true)
       .attr({transform: 'translate('+[titleSize, h - titleSize]+')'});
   axisLabelX.append('rect')
-      .attr({width: w - titleSize * 2, height: titleSize})
+      .attr({width: w - titleSize - legendSize, height: titleSize})
       .style({visibility: showZones? 'visible' : 'hidden'});
   var text = axisLabelX.append('text')
       .text('X Axis Label'); //hardcoded
   var textBBox = text.node().getBBox();
-  text.attr({dy: textBBox.height / 2 + titleSize / 2, dx: (w - titleSize * 2 - textBBox.width) / 2});
+  text.attr({dy: (textBBox.height + titleSize) / 2, dx: (w - titleSize - legendSize - textBBox.width) / 2});
 
   // facets
   //////////////////////////////////////////////////////
@@ -181,27 +195,27 @@
 
   // y axis
   var axisGroupY = facetGroup.filter(function(d, i){ return i == 0; }).append('g').classed('axis-group-y', true)
-      .attr({transform: function(d, i, pI){ return 'translate('+[chartSpaceX, chartSpaceY + axisSize + facetH * pI]+')';}})
+      .attr({transform: function(d, i, pI){ return 'translate('+[chartSpaceX, chartSpaceY + tabSize + facetH * pI]+')';}})
   axisGroupY.append('rect')
       .attr({
         width: axisSize,
-        height: facetH
+        height: facetH - gap
       })
       .style({visibility: showZones? 'visible' : 'hidden'});
 
   // y tab
   var tabGroupY = facetGroup.filter(function(d, i){ return i == data[0].length - 1; })
       .append('g').classed('tab-group-y', true)
-      .attr({transform: function(d, i, pI){ return 'translate('+[chartSpaceX + axisSize + facetW * data[pI].length - 1, chartSpaceY + axisSize + facetH * pI]+')';}});
+      .attr({transform: function(d, i, pI){ return 'translate('+[chartSpaceX + axisSize + facetW * data[pI].length - 1 - gap, chartSpaceY + tabSize + facetH * pI]+')';}});
   tabGroupY.append('rect').classed('tab-y', true)
       .attr({
-        width: axisSize,
-        height: facetH
+        width: tabSize + gap,
+        height: facetH - gap
       });
   var text = tabGroupY.append('text')
       .text('test');
   var textBBox = text.node().getBBox();
-      text.attr({dy: textBBox.height});
+      text.attr({dy: textBBox.height, transform: 'rotate(90) translate('+[facetH / 2 - textBBox.width / 2, -textBBox.height - tabSize / 2]+')'});
 
   // x tab
   var facetTabs = facetRow.filter(function(d, i){ return i == 0; }).selectAll('g.tab-group-x')
@@ -211,8 +225,8 @@
       .attr({transform: function(d, i, pI){ return 'translate('+[chartSpaceX + axisSize + facetW * i, chartSpaceY + facetH * pI]+')';}});
   facetTabs.append('rect').classed('tab-rect-x', true)
       .attr({
-        width: facetW,
-        height: axisSize
+        width: facetW - gap,
+        height: tabSize
       });
   var text = facetTabs.append('text').classed('tab-rect-x', true)
       .text('test') //hardcoded
@@ -224,11 +238,11 @@
       .data(function(d, i){ return d; })
       .enter().append('g')
       .classed('axis-group-x', true)
-      .attr({transform: function(d, i){ return 'translate('+[chartSpaceX + axisSize + facetW * i, chartSpaceY + axisSize + facetH * data.length]+')'; }});
+      .attr({transform: function(d, i){ return 'translate('+[chartSpaceX + axisSize + facetW * i, chartSpaceY + tabSize + facetH * data.length - gap]+')'; }});
   facetTabs.append('rect').classed('axis-x', true)
       .attr({
-        width: facetW,
-        height: axisSize
+        width: facetW - gap,
+        height: axisSize + gap
       })
       .style({visibility: showZones? 'visible' : 'hidden'});
 
@@ -239,14 +253,9 @@
         'class': function(d, i, pI){ return 'chart_' + [i, pI].join('-'); },
         transform: function(d, i, pI){
           var x = chartSpaceX + axisSize + facetW * i;
-          var y = chartSpaceY + axisSize + facetH * pI;
+          var y = chartSpaceY + tabSize + facetH * pI;
           return 'translate('+[x, y]+')';
-        },
-        width: facetW,
-        height: facetH
-      })
-      .style({
-        fill: 'skyblue'
+        }
       })
       .classed('chart', true);
 
@@ -256,11 +265,11 @@
 
   var x1 = d3.scale.ordinal()
       .domain(dataX)
-      .rangeRoundBands([0, facetW], .1);
+      .rangeRoundBands([0, facetW - gap], .1);
 
   var y1 = d3.scale.linear()
       .domain([0, d3.max(dataY)])
-      .range([facetH, 0]);
+      .range([facetH - gap, 0]);
 
   var xAxis = d3.svg.axis()
       .scale(x1)
@@ -277,13 +286,16 @@
   svg.select('.y-axis-group.axis')
       .call(yAxis);
 
+
+  var chartW = facetW - gap;
+  var chartH = facetH - gap;
   d3.selectAll('.chart')
-      .call(d3.custom.PlainBarChart().width(facetW).height(facetH));
+      .call(d3.custom.PlainBarChart().width(chartW).height(chartH));
 
   d3.selectAll('.axis-group-y')
       .each(function(d, i){
         d3.select(this).append('g')
-            .attr({transform: 'translate('+axisSize+',0)'})
+            .attr({transform: 'translate('+ axisSize +',0)'})
             .call(yAxis);
       });
 
