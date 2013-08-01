@@ -9,7 +9,6 @@ d3.custom.Facets = function module() {
         tabSize: 25,
         axisSize: 25,
         gap: 5,
-        showZones: true,
         gridColNum: 4,
         gridRowNum: 3
     };
@@ -29,12 +28,6 @@ d3.custom.Facets = function module() {
             // y axis
             var axisGroupY = facetGroup.filter(function(d, i){ return i == 0; }).append('g').classed('axis-group-y', true)
                 .attr({transform: function(d, i, pI){ return 'translate('+[config.x, config.y + config.tabSize + config.facetH * pI]+')';}})
-            axisGroupY.append('rect')
-                .attr({
-                    width: config.axisSize,
-                    height: config.facetH - config.gap
-                })
-                .style({visibility: config.showZones? 'visible' : 'hidden'});
 
             // y tab
             var tabGroupY = facetGroup.filter(function(d, i){ return i == config.gridColNum - 1; })
@@ -48,7 +41,8 @@ d3.custom.Facets = function module() {
             var text = tabGroupY.append('text')
                 .text('test');
             var textBBox = text.node().getBBox();
-            text.attr({dy: textBBox.height, transform: 'rotate(90) translate('+[config.facetH / 2 - textBBox.width / 2, -textBBox.height - config.tabSize / 2]+')'});
+            text.attr({dy: textBBox.height, transform: 'rotate(90) translate('+
+                [config.facetH / 2 - textBBox.width / 2, -textBBox.height - config.tabSize / 2]+')'});
 
             // x tab
             var facetTabs = facetRow.filter(function(d, i){ return i == 0; }).selectAll('g.tab-group-x')
@@ -72,12 +66,6 @@ d3.custom.Facets = function module() {
                 .enter().append('g')
                 .classed('axis-group-x', true)
                 .attr({transform: function(d, i){ return 'translate('+[config.x + config.axisSize + config.facetW * i, config.y + config.tabSize + config.facetH * config.gridRowNum - config.gap]+')'; }});
-            facetTabs.append('rect').classed('axis-x', true)
-                .attr({
-                    width: config.facetW - config.gap,
-                    height: config.axisSize + config.gap
-                })
-                .style({visibility: config.showZones? 'visible' : 'hidden'});
 
             facetGroup.append('g')
                 .attr({

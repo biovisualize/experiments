@@ -52,14 +52,17 @@
 
 /*
 TODO:
--data input
--wrap axis and scale
+-same data input as current
+-json spec
+
 -single chart
 -zoom to single chart
 
+-layers
+-dual axes
 -free scale
 -legend
--brush
+-brush/zoom
 */
 
   /*
@@ -101,17 +104,10 @@ TODO:
     });
   }
 
-  function getTextSize(text){
-    var svg = d3.select('body').append('svg');
-    var test = svg.node().appendChild(text).getBBox();
-    svg.remove();
-    return 0;
-  }
 
   var data = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]];
 //  var data = [[0, 1, 2], [4, 5, 6], [8, 9, 10]];
 //  var data = [[0, 1, 2, 3], [4, 5, 6, 7]];
-  var showZones = false;
 
 
   // chart space
@@ -137,7 +133,6 @@ TODO:
         w: w,
         h: h,
         titleSize: titleSize,
-        showZones: showZones,
         legendSize: legendSize
       });
 
@@ -156,14 +151,13 @@ TODO:
         tabSize: tabSize,
         axisSize: axisSize,
         gap: gap,
-        showZones: showZones,
         gridColNum: gridColNum,
         gridRowNum: gridRowNum
       });
 
   svg.call(facets);
 
-  // chart
+  // axes
   //////////////////////////////////////////////////////
 
   var dataY = [1, 2, 3, 4, 5, 6];
@@ -181,9 +175,13 @@ TODO:
   svg.call(axes)
 
 
+  // chart
+  //////////////////////////////////////////////////////
+
   var chartW = facetW - gap;
   var chartH = facetH - gap;
   d3.selectAll('.chart')
+      .datum(dataY)
       .call(d3.custom.PlainBarChart().width(chartW).height(chartH));
 
 

@@ -9,7 +9,7 @@ d3.custom.PlainBarChart = function module() {
     function exports(_selection) {
         _selection.each(function(_data) {
 
-            var dataY = [1, 2, 3, 4, 5, 6];
+            var dataY = _data;
             var dataX = ['A', 'B', 'C', 'D', 'E', 'F'];
 
             var x1 = d3.scale.ordinal()
